@@ -27,7 +27,7 @@ npm run build
 
 Production requires PostgreSQL: the Node server exits at startup if `NODE_ENV=production` and none of `DATABASE_URL`, `POSTGRES_URL`, or `POSTGRES_PRISMA_URL` is set. The PostgreSQL schema and seed data are initialized automatically. Build the frontend with `npm run build` before `npm start`; the Node server then serves the built app and API from one origin.
 
-Vercel deployments use `api/[...path].ts` as the `/api/*` serverless function. Add a PostgreSQL connection string as `DATABASE_URL` (or a Vercel `POSTGRES_URL`) in the Vercel project’s Preview and Production environment settings; Vercel does not run the long-lived local Express server.
+Vercel deployments use `api/[...path].ts` as the `/api/*` serverless function. `vercel.json` rewrites only known client-side pages to `index.html`; API requests are deliberately left untouched so POST requests reach the function. Add a PostgreSQL connection string as `DATABASE_URL` (or a Vercel `POSTGRES_URL`) in the Vercel project’s Preview and Production environment settings; Vercel does not run the long-lived local Express server.
 
 ```sh
 DATABASE_URL='postgres://user:password@host:5432/axiom' \

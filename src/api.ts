@@ -18,6 +18,7 @@ function fallbackErrorMessage(status: number, path: string) {
       ? 'The account service could not be found. Refresh the page and try again; if it persists, check the app’s API connection.'
       : 'That service endpoint could not be found. Refresh the app and try again.';
   }
+  if (status === 405 && isGuestStartRequest) return 'The journey API rejected this request. Refresh the page; if it continues, check that the Vercel API function deployed correctly.';
   if (status === 429) return 'Too many attempts. Please wait a moment and try again.';
   if ([502, 503, 504].includes(status)) return 'The service is temporarily unavailable. Please try again shortly.';
   if (status >= 500) return 'The service ran into a problem. Please try again. If your journey may have started, refresh the page to continue.';

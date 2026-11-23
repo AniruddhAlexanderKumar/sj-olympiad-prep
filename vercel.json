@@ -5,6 +5,12 @@
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/home", "destination": "/index.html" },
+    { "source": "/journey", "destination": "/index.html" },
+    { "source": "/practice", "destination": "/index.html" },
+    { "source": "/tutor", "destination": "/index.html" },
+    { "source": "/profile", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/lesson/:lessonId", "destination": "/index.html" }
   ]
 }
