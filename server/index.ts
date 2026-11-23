@@ -5,10 +5,15 @@ import { createDatabase } from './db.js';
 const db = await createDatabase();
 await bootstrapAdmin(db);
 const app = createApp(db);
-const port = Number(process.env.PORT ?? 3001);
-const host = process.env.HOST ?? '0.0.0.0';
+// An empty or invalid PORT (for example PORT="") must never bind an ephemeral port,
+// otherwise the web app's /api proxy and health checks silently lose the API.
+const configuredPort = Number(process.env.PORT);
+const port = Number.isInteger(configuredPort) && configuredPort > 0 && configuredPort < 65_536 ? configuredPort : 3001;
+const host = process.env.HOST?.trim() || '0.0.0.0';
 const server = app.listen(port, host, () => {
-  console.info(JSON.stringify({ level: 'info', message: 'Axiom API ready', host, port, database: process.env.DATABASE_URL ? 'postgres' : process.env.DATABASE_PATH ?? 'data/axiom.sqlite' }));
+  const address = server.address();
+  const listeningPort = address && typeof address !== 'string' ? address.port : port;
+  console.info(JSON.stringify({ level: 'info', message: 'Axiom API ready', host, port: listeningPort, database: process.env.DATABASE_URL ? 'postgres' : process.env.DATABASE_PATH ?? 'data/axiom.sqlite' }));
 });
 
 const shutdown = () => {

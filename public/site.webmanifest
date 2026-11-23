@@ -1,0 +1,12 @@
+{
+  "name": "Axiom Olympiad Learning",
+  "short_name": "Axiom",
+  "description": "A calmer, more thoughtful way to prepare for academic Olympiads.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f3",
+  "theme_color": "#315f4d",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

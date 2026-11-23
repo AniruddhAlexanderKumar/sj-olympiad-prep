@@ -11,6 +11,8 @@
     { "source": "/tutor", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" },
-    { "source": "/lesson/:lessonId", "destination": "/index.html" }
+    { "source": "/lesson/:lessonId", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" }
   ]
 }

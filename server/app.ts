@@ -50,6 +50,28 @@ export function createApp(db: AppDatabase) {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    response.setHeader('Content-Security-Policy', [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "img-src 'self' data:",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "connect-src 'self'",
+    ].join('; '));
+    if (process.env.NODE_ENV === 'production') response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
+
+  // Every API response is personal or state-changing, so it must never be cached by a proxy or browser.
+  app.use('/api', (_request, response, next) => {
+    response.setHeader('Cache-Control', 'no-store, private');
+    response.setHeader('Pragma', 'no-cache');
     next();
   });
 
@@ -124,6 +146,29 @@ export function createApp(db: AppDatabase) {
     response.json({ ok: true });
   });
 
+  // Converts the current guest study space into a real account without losing any progress.
+  router.post('/auth/upgrade', authRequired(db), authLimiter, async (request, response) => {
+    const user = authed(request);
+    if (!user.isGuest) throw new HttpError(409, 'This study space is already saved to an account.', 'already_registered');
+    const fullName = stringField(request.body?.fullName, 'Name', 2, 60);
+    const email = stringField(request.body?.email, 'Email', 3, 254).toLowerCase();
+    const password = stringField(request.body?.password, 'Password', 8, 128);
+    const grade = stringField(request.body?.grade, 'Grade', 0, 30, true);
+    if (!emailPattern.test(email)) throw new HttpError(400, 'Enter a valid email address.', 'invalid_email');
+    if (email.endsWith('@guest.axiom.invalid')) throw new HttpError(400, 'Enter a real email address.', 'invalid_email');
+    if ((await db.prepare('SELECT 1 FROM users WHERE email = ? AND id != ?').get(email, user.id))) throw new HttpError(409, 'An account with that email already exists.', 'email_in_use');
+    const salt = randomBytes(16).toString('hex');
+    const passwordHash = await hashPassword(password, salt);
+    try {
+      (await db.prepare('UPDATE users SET full_name = ?, email = ?, password_salt = ?, password_hash = ?, grade = ?, updated_at = ? WHERE id = ?')
+        .run(fullName, email, salt, passwordHash, grade, new Date().toISOString(), user.id));
+    } catch (error) {
+      if (String(error).includes('UNIQUE') || String(error).includes('duplicate key')) throw new HttpError(409, 'An account with that email already exists.', 'email_in_use');
+      throw error;
+    }
+    response.json({ user: await getAuthUser(db, user.id) });
+  });
+
   router.get('/auth/me', authRequired(db), (request, response) => response.json({ user: authed(request) }));
   router.get('/bootstrap', authRequired(db), async (request, response) => response.json(await getBootstrap(db, authed(request).id)));
 
@@ -178,6 +223,14 @@ export function createApp(db: AppDatabase) {
       (await db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values));
     }
     response.json({ user: await getAuthUser(db, user.id) });
+  });
+
+  // Permanently removes the learner and every record that belongs to them (foreign keys cascade).
+  router.delete('/profile', authRequired(db), async (request, response) => {
+    const user = authed(request);
+    await destroySession(db, request, response);
+    (await db.prepare('DELETE FROM users WHERE id = ?').run(user.id));
+    response.json({ ok: true });
   });
 
   router.get('/lessons/:id', authRequired(db), async (request, response) => response.json(await getLesson(db, authed(request).id, param(request, 'id'))));
