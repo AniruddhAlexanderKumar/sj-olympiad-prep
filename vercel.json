@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/[...path].ts": {
+      "includeFiles": "server/migrations/**/*"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

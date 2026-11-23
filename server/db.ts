@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -33,9 +33,16 @@ export interface PostgresPoolLike {
   end(): Promise<void>;
 }
 
-const migrationDirectory = fileURLToPath(new URL('./migrations/', import.meta.url));
+const sourceMigrationDirectory = fileURLToPath(new URL('./migrations/', import.meta.url));
+const migrationCandidates = [
+  resolve(process.cwd(), 'server', 'migrations'),
+  resolve(process.cwd(), '..', 'server', 'migrations'),
+  resolve(process.cwd(), 'migrations'),
+  sourceMigrationDirectory,
+];
+const migrationDirectory = migrationCandidates.find((candidate) => existsSync(resolve(candidate, '001_initial.sql'))) ?? sourceMigrationDirectory;
 const sqliteMigrationFiles = ['001_initial.sql', '002_assessments.sql', '003_sessions.sql', '004_review_schedule.sql', '005_proof_reviews.sql'];
-const postgresSchemaPath = fileURLToPath(new URL('./migrations/postgres/001_initial.sql', import.meta.url));
+const postgresSchemaPath = resolve(migrationDirectory, 'postgres', '001_initial.sql');
 
 class SqliteDatabase implements AppDatabase {
   readonly dialect = 'sqlite' as const;
@@ -245,8 +252,9 @@ async function createPostgresDatabase(connectionString: string): Promise<AppData
 
 export async function createDatabase(databasePath?: string): Promise<AppDatabase> {
   if (databasePath !== undefined) return createSqliteDatabase(databasePath);
-  if (process.env.DATABASE_URL) return createPostgresDatabase(process.env.DATABASE_URL);
-  if (process.env.NODE_ENV === 'production') throw new Error('DATABASE_URL is required in production. Set it to a PostgreSQL connection string.');
+  const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.POSTGRES_PRISMA_URL ?? process.env.POSTGRES_URL_NON_POOLING;
+  if (connectionString) return createPostgresDatabase(connectionString);
+  if (process.env.NODE_ENV === 'production') throw new Error('DATABASE_URL or POSTGRES_URL is required in production. Set it to a PostgreSQL connection string.');
   return createSqliteDatabase(process.env.DATABASE_PATH ?? resolve(process.cwd(), 'data/axiom.sqlite'));
 }
 
