@@ -29,12 +29,26 @@ test('student can register, learn, earn progress, practise, and resume from the 
     const unauthenticated = await send('/bootstrap');
     assert.equal(unauthenticated.response.status, 401);
 
-    const signup = await send('/auth/register', { method: 'POST', body: { fullName: 'Jordan Learner', email: 'jordan@example.com', password: 'thoughtful-study-42', grade: '10', competitionSlug: 'amc-10' } });
+    const missingEndpoint = await send('/this-route-does-not-exist');
+    assert.equal(missingEndpoint.response.status, 404);
+    assert.ok((missingEndpoint.response.headers.get('content-type') ?? '').includes('application/json'));
+    assert.equal(missingEndpoint.data.code, 'not_found');
+
+    const invalidEmail = await send('/auth/register', { method: 'POST', body: { fullName: 'Jordan Learner', email: 'not-an-email', password: 'thoughtful-study-42', grade: '10', competitionSlug: 'amc-10' } });
+    assert.equal(invalidEmail.response.status, 400);
+    assert.equal(invalidEmail.data.code, 'invalid_email');
+
+    const signup = await send('/auth/register', { method: 'POST', body: { fullName: '  Jordan Learner  ', email: 'JORDAN@EXAMPLE.COM', password: 'thoughtful-study-42', grade: '10', competitionSlug: 'amc-10' } });
     assert.equal(signup.response.status, 201);
     assert.equal(signup.data.user.fullName, 'Jordan Learner');
+    assert.equal(signup.data.user.email, 'jordan@example.com');
     const setCookie = signup.response.headers.get('set-cookie');
     assert.ok(setCookie?.includes('axiom_session='));
     cookie = setCookie!.split(';')[0];
+
+    const duplicateSignup = await send('/auth/register', { method: 'POST', body: { fullName: 'Another Name', email: 'JORDAN@example.com', password: 'thoughtful-study-42', grade: '', competitionSlug: 'amc-10' } });
+    assert.equal(duplicateSignup.response.status, 409);
+    assert.equal(duplicateSignup.data.code, 'email_in_use');
 
     const adminAccess = await send('/admin/content', { cookie });
     assert.equal(adminAccess.response.status, 403);
@@ -123,6 +137,15 @@ test('student can register, learn, earn progress, practise, and resume from the 
     assert.equal(resumed.data.stats.completedLessons, 1);
     assert.ok(resumed.data.recentAssessments.length > 0);
     assert.equal(resumed.data.recentAssessments[0].correctCount, 1);
+
+    const login = await send('/auth/login', { method: 'POST', body: { email: 'JORDAN@EXAMPLE.COM', password: 'thoughtful-study-42' } });
+    assert.equal(login.response.status, 200);
+    assert.equal(login.data.user.id, oldUserId);
+    const loginCookie = login.response.headers.get('set-cookie')?.split(';')[0];
+    assert.ok(loginCookie?.startsWith('axiom_session='));
+    const loginBootstrap = await send('/bootstrap', { cookie: loginCookie });
+    assert.equal(loginBootstrap.response.status, 200);
+    assert.equal(loginBootstrap.data.user.email, 'jordan@example.com');
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await db.close();
