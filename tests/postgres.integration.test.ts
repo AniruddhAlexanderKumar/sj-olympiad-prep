@@ -44,9 +44,18 @@ test('core student journey runs against PostgreSQL SQL and schema', async () => 
       return { response, data: await response.json() as Record<string, any> };
     };
 
-    const signup = await send('/auth/register', { method: 'POST', body: { fullName: 'Postgres Student', email: 'pg-student@example.com', password: 'postgres-student-password', grade: '10', competitionSlug: 'amc-10' } });
+    const signup = await send('/auth/register', { method: 'POST', body: { fullName: 'Postgres Student', email: 'PG-STUDENT@EXAMPLE.COM', password: 'postgres-student-password', grade: '10', competitionSlug: 'amc-10' } });
     assert.equal(signup.response.status, 201);
+    assert.equal(signup.data.user.email, 'pg-student@example.com');
     const cookie = signup.response.headers.get('set-cookie')!.split(';')[0];
+    const duplicateSignup = await send('/auth/register', { method: 'POST', body: { fullName: 'Duplicate Student', email: 'pg-student@example.com', password: 'another-password-42', grade: '', competitionSlug: 'amc-10' } });
+    assert.equal(duplicateSignup.response.status, 409);
+    assert.equal(duplicateSignup.data.code, 'email_in_use');
+    const studentLogin = await send('/auth/login', { method: 'POST', body: { email: 'PG-STUDENT@EXAMPLE.COM', password: 'postgres-student-password' } });
+    assert.equal(studentLogin.response.status, 200);
+    assert.equal(studentLogin.data.user.email, 'pg-student@example.com');
+    const signedInBootstrap = await send('/bootstrap', { cookie: studentLogin.response.headers.get('set-cookie')!.split(';')[0] });
+    assert.equal(signedInBootstrap.response.status, 200);
     const adminLogin = await send('/auth/login', { method: 'POST', body: { email: 'pg-reviewer@example.com', password: 'pg-reviewer-password-92' } });
     assert.equal(adminLogin.response.status, 200);
     const adminCookie = adminLogin.response.headers.get('set-cookie')!.split(';')[0];

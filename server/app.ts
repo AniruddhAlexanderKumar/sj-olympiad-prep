@@ -417,6 +417,7 @@ export function createApp(db: AppDatabase) {
   });
   app.use('/api/admin', admin);
   app.use('/api', router);
+  app.use('/api', (_request, response) => response.status(404).json({ error: 'That API endpoint could not be found.', code: 'not_found' }));
 
   if (process.env.NODE_ENV === 'production') {
     const distPath = resolve(process.cwd(), 'dist');

@@ -11,7 +11,9 @@ npm install
 npm run dev
 ```
 
-The local development server uses SQLite at `data/axiom.sqlite` by default, applies the SQL migrations, and seeds the sample curriculum on startup. Set `DATABASE_PATH` to use another SQLite file. The web app runs on port 5173 and proxies `/api` to the API on port 3001.
+The local development server uses SQLite at `data/axiom.sqlite` by default, applies the SQL migrations, and seeds the sample curriculum on startup. Set `DATABASE_PATH` to use another SQLite file. The web app runs on port 5173 and proxies `/api` to the API on port 3001. Confirm the API is reachable at `/api/health`; it returns JSON with `ok: true`.
+
+In production, run the Node server so it can serve both the built frontend and `/api` routes. Static-only hosting cannot create accounts or save progress; configure the API and frontend behind the same origin.
 
 ```sh
 npm test
@@ -21,7 +23,7 @@ npm run build
 
 ## PostgreSQL deployment
 
-Production requires PostgreSQL: the server exits at startup if `NODE_ENV=production` and `DATABASE_URL` is not set. The PostgreSQL schema and seed data are initialized automatically.
+Production requires PostgreSQL: the server exits at startup if `NODE_ENV=production` and `DATABASE_URL` is not set. The PostgreSQL schema and seed data are initialized automatically. Build the frontend with `npm run build` before `npm start`; the Node server then serves the built app and API from one origin.
 
 ```sh
 DATABASE_URL='postgres://user:password@host:5432/axiom' \
