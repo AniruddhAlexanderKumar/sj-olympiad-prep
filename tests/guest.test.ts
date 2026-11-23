@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { createServer } from 'node:http';
 import { test } from 'node:test';
+import { dispatchApiRequest } from '../api/[...path].js';
 import { createApp } from '../server/app.js';
 import { createDatabase } from '../server/db.js';
 
 test('a visitor starts a private guest journey without registration fields', async () => {
   const db = await createDatabase(':memory:');
-  const server = createApp(db).listen(0, '127.0.0.1');
+  const app = createApp(db);
+  const server = createServer((request, response) => dispatchApiRequest(app, request, response)).listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address();
   assert.ok(address && typeof address !== 'string');
@@ -32,6 +35,13 @@ test('a visitor starts a private guest journey without registration fields', asy
     assert.equal(journey.user.isGuest, true);
     assert.equal(journey.currentLesson.id, 'nt-remainders');
     assert.equal(journey.units.length, 4);
+
+    const strippedPrefix = await fetch(`http://127.0.0.1:${address.port}/auth/guest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
+    assert.equal(strippedPrefix.status, 201);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await db.close();
