@@ -27,6 +27,24 @@ test('API client gives a useful account-service message for non-JSON 404 respons
   }
 });
 
+test('API client points 405 guest-start errors to the Vercel function configuration', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('Method not allowed', {
+    status: 405,
+    headers: { 'content-type': 'text/plain' },
+  })) as typeof fetch;
+  try {
+    await assert.rejects(api('/auth/guest', { method: 'POST', body: '{}' }), (error: unknown) => {
+      assert.ok(error instanceof ApiError);
+      assert.equal(error.status, 405);
+      assert.match(error.message, /Vercel API function/i);
+      return true;
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('API client explains network failures and rejects an HTML success page', async () => {
   const originalFetch = globalThis.fetch;
   try {
