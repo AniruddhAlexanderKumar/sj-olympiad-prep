@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { BookOpenText, ChevronDown, Flame, House, LogOut, MessageCircleMore, Route, ShieldCheck, Swords, UserRound } from 'lucide-react';
+import { BookOpenText, ChevronDown, Flame, House, MessageCircleMore, Route, ShieldCheck, Swords, TrendingUp } from 'lucide-react';
 import type { Bootstrap } from '../types.js';
 import { Brand } from './Brand.js';
 
@@ -8,19 +8,17 @@ const navItems = [
   { to: '/journey', label: 'Journey', icon: Route },
   { to: '/practice', label: 'Practice', icon: Swords },
   { to: '/tutor', label: 'AI tutor', icon: MessageCircleMore },
-  { to: '/profile', label: 'Profile', icon: UserRound },
+  { to: '/profile', label: 'Progress', icon: TrendingUp },
 ];
 
-export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange, onLogout }: {
+export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange }: {
   bootstrap: Bootstrap;
   open: boolean;
   onClose: () => void;
   onCompetitionChange: (slug: string) => void;
-  onLogout: () => void;
 }) {
   const location = useLocation();
   const progress = bootstrap.stats.totalLessons ? bootstrap.stats.completedLessons / bootstrap.stats.totalLessons : 0;
-  const currentTitle = bootstrap.competition.name;
   return (
     <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
       <div className="sidebar-top">
@@ -61,9 +59,8 @@ export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange,
       <div className="sidebar-user">
         <NavLink to="/profile" onClick={onClose} className="sidebar-user-info">
           <span className="avatar avatar-small">{bootstrap.user.fullName.trim().charAt(0).toUpperCase()}</span>
-          <span className="sidebar-user-copy"><strong>{bootstrap.user.fullName}</strong><span>Level {bootstrap.stats.level} learner</span></span>
+          <span className="sidebar-user-copy"><strong>{bootstrap.user.fullName}</strong><span>{bootstrap.user.isGuest ? 'Saved on this device' : `Level ${bootstrap.stats.level} learner`}</span></span>
         </NavLink>
-        <button className="icon-button logout-button" onClick={onLogout} aria-label={`Sign out of ${currentTitle}`} title="Sign out"><LogOut size={16} /></button>
       </div>
     </aside>
   );

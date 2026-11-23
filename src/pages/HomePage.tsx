@@ -32,7 +32,7 @@ export default function HomePage({ bootstrap, loading }: { bootstrap: Bootstrap;
   return (
     <div className="dashboard-page page-enter">
       <div className="page-heading dashboard-heading">
-        <div><span className="eyebrow">{bootstrap.competition.name.toUpperCase()} · YOUR STUDY SPACE</span><h1>Good morning, {firstName}.</h1><p>A little progress today makes the hard problems feel closer.</p></div>
+        <div><span className="eyebrow">{bootstrap.competition.name.toUpperCase()} · YOUR STUDY SPACE</span><h1>{bootstrap.user.isGuest ? 'Your journey starts here.' : `Good morning, ${firstName}.`}</h1><p>A little progress today makes the hard problems feel closer.</p></div>
         <div className="date-stamp"><span className="date-dot" />{formatDate()}</div>
       </div>
 

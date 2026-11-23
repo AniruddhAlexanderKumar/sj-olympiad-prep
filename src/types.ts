@@ -2,6 +2,7 @@ export type User = {
   id: number;
   fullName: string;
   email: string;
+  isGuest: boolean;
   role: 'student' | 'admin';
   grade: string;
   activeCompetitionSlug: string | null;

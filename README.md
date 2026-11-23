@@ -13,7 +13,9 @@ npm run dev
 
 The local development server uses SQLite at `data/axiom.sqlite` by default, applies the SQL migrations, and seeds the sample curriculum on startup. Set `DATABASE_PATH` to use another SQLite file. The web app runs on port 5173 and proxies `/api` to the API on port 3001. Confirm the API is reachable at `/api/health`; it returns JSON with `ok: true`.
 
-In production, run the Node server so it can serve both the built frontend and `/api` routes. Static-only hosting cannot create accounts or save progress; configure the API and frontend behind the same origin.
+There is no sign-in or registration screen. Selecting **Start my journey** creates a private guest study space automatically; progress stays with that browser/device.
+
+In production, run the Node server so it can serve both the built frontend and `/api` routes. Static-only hosting cannot start guest journeys or save progress; configure the API and frontend behind the same origin.
 
 ```sh
 npm test
@@ -38,7 +40,7 @@ SQLite is intended for local development and automated tests. PostgreSQL is the 
 
 ## What is implemented
 
-- Student registration/login, persistent HTTP-only sessions, profile settings, and independent competition enrollment/progress.
+- One-click anonymous guest onboarding with a persistent HTTP-only browser session, profile settings, and independent competition enrollment/progress. No login is needed to start.
 - AMC 10 journey with Number Theory, Algebra, Geometry, and Combinatorics; structured lessons, prerequisites, mastery gates, and interactive answer types.
 - Server-validated original practice questions, progressive hints, explanations after a correct answer or an additional attempt, spaced review scheduling, timed sets, mini assessments, and persisted session resume.
 - XP, levels, achievements, daily quests, streaks, activity history, topic mastery estimates, and opt-in leaderboard data.
