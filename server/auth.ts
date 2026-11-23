@@ -7,6 +7,7 @@ export type AuthUser = {
   id: number;
   fullName: string;
   email: string;
+  isGuest: boolean;
   role: 'student' | 'admin';
   grade: string;
   activeCompetitionSlug: string | null;
@@ -37,10 +38,13 @@ export async function getAuthUser(db: AppDatabase, userId: number): Promise<Auth
   const row = (await db.prepare(`SELECT id, full_name, email, role, grade, active_competition_slug, daily_goal, theme, leaderboard_opt_in
     FROM users WHERE id = ?`).get(userId)) as Record<string, unknown> | undefined;
   if (!row) return undefined;
+  const email = String(row.email);
+  const isGuest = email.endsWith('@guest.axiom.invalid');
   return {
     id: Number(row.id),
     fullName: String(row.full_name),
-    email: String(row.email),
+    email: isGuest ? '' : email,
+    isGuest,
     role: row.role === 'admin' ? 'admin' : 'student',
     grade: String(row.grade ?? ''),
     activeCompetitionSlug: row.active_competition_slug ? String(row.active_competition_slug) : null,

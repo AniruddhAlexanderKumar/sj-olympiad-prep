@@ -48,6 +48,13 @@ test('core student journey runs against PostgreSQL SQL and schema', async () => 
     assert.equal(signup.response.status, 201);
     assert.equal(signup.data.user.email, 'pg-student@example.com');
     const cookie = signup.response.headers.get('set-cookie')!.split(';')[0];
+    const guestStart = await send('/auth/guest', { method: 'POST', body: {} });
+    assert.equal(guestStart.response.status, 201);
+    assert.equal(guestStart.data.user.isGuest, true);
+    assert.equal(guestStart.data.user.email, '');
+    const guestBootstrap = await send('/bootstrap', { cookie: guestStart.response.headers.get('set-cookie')!.split(';')[0] });
+    assert.equal(guestBootstrap.response.status, 200);
+    assert.equal(guestBootstrap.data.currentLesson.id, 'nt-remainders');
     const duplicateSignup = await send('/auth/register', { method: 'POST', body: { fullName: 'Duplicate Student', email: 'pg-student@example.com', password: 'another-password-42', grade: '', competitionSlug: 'amc-10' } });
     assert.equal(duplicateSignup.response.status, 409);
     assert.equal(duplicateSignup.data.code, 'email_in_use');

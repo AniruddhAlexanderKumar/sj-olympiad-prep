@@ -61,6 +61,24 @@ export function createApp(db: AppDatabase) {
 
   router.get('/health', (_request, response) => response.json({ ok: true, service: 'axiom-api' }));
 
+  router.post('/auth/guest', authLimiter, async (_request, response) => {
+    const competitionSlug = 'amc-10';
+    const competition = await db.prepare('SELECT slug FROM competitions WHERE slug = ? AND is_available = 1 AND is_published = 1').get(competitionSlug);
+    if (!competition) throw new HttpError(503, 'The starter journey is temporarily unavailable. Please try again shortly.', 'competition_unavailable');
+    const email = `guest-${randomBytes(24).toString('hex')}@guest.axiom.invalid`;
+    const salt = randomBytes(16).toString('hex');
+    const passwordHash = randomBytes(64).toString('hex');
+    const userId = await db.transaction(async () => {
+      const created = await db.prepare(`INSERT INTO users (full_name, email, password_salt, password_hash, role, active_competition_slug)
+        VALUES ('Learner', ?, ?, ?, 'student', ?)`).run(email, salt, passwordHash, competitionSlug);
+      const id = Number(created.lastInsertRowid);
+      await db.prepare('INSERT INTO user_competitions (user_id, competition_slug) VALUES (?, ?)').run(id, competitionSlug);
+      return id;
+    });
+    await issueSession(db, response, userId);
+    response.status(201).json({ user: await getAuthUser(db, userId) });
+  });
+
   router.post('/auth/register', authLimiter, async (request, response) => {
     const fullName = stringField(request.body?.fullName, 'Name', 2, 60);
     const email = stringField(request.body?.email, 'Email', 3, 254).toLowerCase();

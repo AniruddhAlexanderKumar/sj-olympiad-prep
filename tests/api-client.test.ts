@@ -17,6 +17,11 @@ test('API client gives a useful account-service message for non-JSON 404 respons
       assert.doesNotMatch(error.message, /request could not be completed/i);
       return true;
     });
+    await assert.rejects(api('/auth/guest', { method: 'POST', body: '{}' }), (error: unknown) => {
+      assert.ok(error instanceof ApiError);
+      assert.match(error.message, /journey starter could not be found/i);
+      return true;
+    });
   } finally {
     globalThis.fetch = originalFetch;
   }

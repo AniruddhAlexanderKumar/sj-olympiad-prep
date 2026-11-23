@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { api, ApiError, patchJson, postJson } from './api.js';
 import type { Bootstrap, User } from './types.js';
-import AuthScreen from './pages/AuthScreen.js';
+import WelcomePage from './pages/WelcomePage.js';
 import HomePage from './pages/HomePage.js';
 import JourneyPage from './pages/JourneyPage.js';
 import LessonPage from './pages/LessonPage.js';
@@ -64,15 +64,15 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [bootstrap?.user.theme]);
 
-  const handleAuthenticated = (signedInUser: User) => {
-    setUser(signedInUser);
+  const handleActiveUser = (activeUser: User) => {
+    setUser(activeUser);
     setBootstrap(null);
     setBootError('');
   };
-  const logout = async () => {
-    try { await postJson('/auth/logout', {}); } catch { /* The local session still closes. */ }
-    setUser(null);
-    setBootstrap(null);
+  const startJourney = async () => {
+    const result = await postJson('/auth/guest', {}) as { user?: User };
+    if (!result?.user) throw new Error('We could not open your study space. Please try again.');
+    handleActiveUser(result.user);
   };
   const switchCompetition = async (slug: string) => {
     try {
@@ -84,9 +84,9 @@ export default function App() {
   };
 
   if (sessionLoading) return <LoadingScreen />;
-  if (!user) return <AuthScreen onAuthenticated={handleAuthenticated} />;
+  if (!user) return <WelcomePage onStart={startJourney} />;
   if (!bootstrap) {
-    return bootError ? <div className="boot-error"><AxiomMark /><h1>We couldn’t open your study space</h1><p>{bootError}</p><button className="button button-primary" onClick={() => void refresh().catch(() => undefined)}>Try again</button><button className="text-button" onClick={() => void logout()}>Sign out</button></div> : <LoadingScreen />;
+    return bootError ? <div className="boot-error"><AxiomMark /><h1>We couldn’t open your study space</h1><p>{bootError}</p><button className="button button-primary" onClick={() => void refresh().catch(() => undefined)}>Try again</button></div> : <LoadingScreen />;
   }
 
   const titleForPath = (path: string) => {
@@ -95,7 +95,7 @@ export default function App() {
     if (path.startsWith('/journey')) return 'Learning journey';
     if (path.startsWith('/practice')) return 'Practice arena';
     if (path.startsWith('/tutor')) return 'Axiom tutor';
-    if (path.startsWith('/profile')) return 'Your profile';
+    if (path.startsWith('/profile')) return 'Your progress';
     return 'Your study space';
   };
   const isLesson = location.pathname.startsWith('/lesson/');
@@ -108,7 +108,6 @@ export default function App() {
         open={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
         onCompetitionChange={(slug) => void switchCompetition(slug)}
-        onLogout={() => void logout()}
       />
       <div className="app-main">
         <header className="topbar">
