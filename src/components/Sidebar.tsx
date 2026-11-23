@@ -1,15 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { BookOpenText, ChevronDown, Flame, House, MessageCircleMore, Route, ShieldCheck, Swords, TrendingUp } from 'lucide-react';
+import { BookOpenText, ChevronDown, Route, ShieldCheck } from 'lucide-react';
 import type { Bootstrap } from '../types.js';
 import { Brand } from './Brand.js';
-
-const navItems = [
-  { to: '/home', label: 'Home', icon: House },
-  { to: '/journey', label: 'Journey', icon: Route },
-  { to: '/practice', label: 'Practice', icon: Swords },
-  { to: '/tutor', label: 'AI tutor', icon: MessageCircleMore },
-  { to: '/profile', label: 'Progress', icon: TrendingUp },
-];
 
 export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange }: {
   bootstrap: Bootstrap;
@@ -22,7 +14,7 @@ export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange 
   return (
     <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
       <div className="sidebar-top">
-        <NavLink to="/home" className="brand-link" onClick={onClose}><Brand /></NavLink>
+        <NavLink to="/journey" className="brand-link" onClick={onClose}><Brand /></NavLink>
         <button className="sidebar-mobile-close icon-button" onClick={onClose} aria-label="Close navigation">×</button>
       </div>
       <div className="sidebar-journey-picker">
@@ -43,24 +35,17 @@ export default function Sidebar({ bootstrap, open, onClose, onCompetitionChange 
       </div>
       <nav className="primary-nav" aria-label="Main navigation">
         <span className="sidebar-eyebrow nav-eyebrow">LEARN</span>
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} onClick={onClose} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`} aria-current={location.pathname === to ? 'page' : undefined}>
-            <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{to === '/practice' && <span className="nav-link-new">NEW</span>}
-          </NavLink>
-        ))}
+        <NavLink to="/journey" onClick={onClose} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`} aria-current={location.pathname.startsWith('/journey') || location.pathname.startsWith('/lesson') ? 'page' : undefined}>
+          <Route size={18} strokeWidth={1.8} /><span>Journey</span>
+        </NavLink>
       </nav>
       <div className="sidebar-spacer" />
-      <div className="sidebar-streak-card">
-        <div className="streak-card-icon"><Flame size={16} /></div>
-        <div><strong>{bootstrap.stats.currentStreak} day streak</strong><span>A small step, every day.</span></div>
-        <span className="streak-card-days">{['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => <i key={`${day}${index}`} className={index < Math.min(bootstrap.stats.currentStreak, 7) ? 'streak-day-active' : ''}>{day}</i>)}</span>
-      </div>
       {bootstrap.user.role === 'admin' && <NavLink to="/admin" onClick={onClose} className={`admin-nav-link ${location.pathname.startsWith('/admin') ? 'nav-link-active' : ''}`}><ShieldCheck size={17} /> Content studio</NavLink>}
       <div className="sidebar-user">
-        <NavLink to="/profile" onClick={onClose} className="sidebar-user-info">
+        <div className="sidebar-user-info">
           <span className="avatar avatar-small">{bootstrap.user.fullName.trim().charAt(0).toUpperCase()}</span>
           <span className="sidebar-user-copy"><strong>{bootstrap.user.fullName}</strong><span>{bootstrap.user.isGuest ? 'Saved on this device' : `Level ${bootstrap.stats.level} learner`}</span></span>
-        </NavLink>
+        </div>
       </div>
     </aside>
   );

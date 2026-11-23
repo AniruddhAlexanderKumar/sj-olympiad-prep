@@ -232,11 +232,10 @@ export default function LessonPage({ bootstrap, refresh }: { bootstrap: Bootstra
   if (!data || !lesson) return <div className="lesson-error"><span><CircleHelp size={18} /></span><h2>We couldn’t open this lesson</h2><p>{loadError || 'It may still be locked. Head back to your journey to see what is ready.'}</p><button className="button button-primary" onClick={() => navigate('/journey')}>Back to journey<ArrowRight size={15} /></button></div>;
 
   const stepForward = () => setStep((value) => Math.min(4, value + 1));
-  const goToTutor = () => navigate('/tutor', { state: { lessonId: lesson.id } });
 
   return (
     <div className="lesson-page page-enter">
-      <div className="lesson-topline"><button className="lesson-back-link" onClick={() => navigate('/journey')}><ArrowLeft size={15} /> Back to journey</button><div className="lesson-top-meta"><span style={{ color: lesson.unit.color }}><SymbolIcon name="book-open" size={15} /></span><span>{lesson.unit.title}</span><span>·</span><span>{lesson.competition}</span><span>·</span><span><Clock3 size={13} /> {lesson.estimatedMinutes} min</span></div><button className="lesson-top-help" onClick={goToTutor}><Sparkles size={14} /> Ask the tutor</button></div>
+      <div className="lesson-topline"><button className="lesson-back-link" onClick={() => navigate('/journey')}><ArrowLeft size={15} /> Back to journey</button><div className="lesson-top-meta"><span style={{ color: lesson.unit.color }}><SymbolIcon name="book-open" size={15} /></span><span>{lesson.unit.title}</span><span>·</span><span>{lesson.competition}</span><span>·</span><span><Clock3 size={13} /> {lesson.estimatedMinutes} min</span></div></div>
       {loadError && <div className="inline-alert lesson-inline-alert">{loadError}<button className="text-button" onClick={() => setLoadError('')}>Dismiss</button></div>}
       <div className="lesson-progress-header"><div><span className="eyebrow">UNIT {String(unitNumber).padStart(2, '0')} <span>·</span> LESSON {String(displayLessonNumber).padStart(2, '0')}</span><h1>{lesson.title}</h1></div><div className="lesson-step-overview"><span>{step === 5 ? 'Lesson complete' : `Step ${Math.min(step + 1, 5)} of 5`}</span><div className="lesson-overall-track"><span style={{ width: `${step === 5 ? 100 : ((step + 1) / 5) * 100}%` }} /></div></div></div>
 
@@ -260,7 +259,7 @@ export default function LessonPage({ bootstrap, refresh }: { bootstrap: Bootstra
         </main>
 
         <aside className="lesson-learning-rail">
-          <div className="lesson-rail-card lesson-rail-coach"><div className="rail-coach-icon"><Sparkles size={16} /></div><span className="eyebrow">LEARNING, NOT RUSHING</span><h3>Good thinking takes a moment.</h3><p>You can revisit this lesson any time. A wrong answer is useful information, not a setback.</p><button onClick={goToTutor}>Ask the tutor for a hint <ArrowRight size={13} /></button></div>
+          <div className="lesson-rail-card lesson-rail-coach"><div className="rail-coach-icon"><Sparkles size={16} /></div><span className="eyebrow">LEARNING, NOT RUSHING</span><h3>Good thinking takes a moment.</h3><p>You can revisit this lesson any time. A wrong answer is useful information, not a setback.</p></div>
           <div className="lesson-rail-card lesson-rail-objectives"><span className="eyebrow">YOUR LEARNING GOALS</span>{lesson.objectives.map((objective, index) => <div className="rail-objective" key={objective}><span className={step > index ? 'rail-objective-done' : ''}>{step > index ? <Check size={11} /> : String(index + 1)}</span><p>{objective}</p></div>)}</div>
           <div className="lesson-source-note"><span><CircleHelp size={15} /></span><p>Original sample question. Not an official competition problem.</p></div>
           <div className="lesson-rail-daily"><div className="daily-icon-small"><Clock3 size={14} /></div><div><strong>{bootstrap.today.uniqueQuestions}/{bootstrap.user.dailyGoal}</strong><span>questions in today’s goal</span></div></div>

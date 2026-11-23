@@ -13,7 +13,7 @@ npm run dev
 
 The local development server uses SQLite at `data/axiom.sqlite` by default, applies the SQL migrations, and seeds the sample curriculum on startup. Set `DATABASE_PATH` to use another SQLite file. The web app runs on port 5173 and proxies `/api` to the API on port 3001. Confirm the API is reachable at `/api/health`; it returns JSON with `ok: true`.
 
-There is no sign-in or registration screen. Selecting **Start my journey** creates a private guest study space automatically; progress stays with that browser/device.
+Selecting **Start my journey** creates a private guest study space automatically; progress stays with that browser/device. Guest learners can convert that space into a real account (keeping all progress) from **Progress → Save this study space**, and returning learners can sign in from the welcome screen. A learner can permanently delete their study space from the same page. `/privacy` and `/terms` are public pages and are linked from the welcome screen and the app footer.
 
 In production, run the Node server so it can serve both the built frontend and `/api` routes. Static-only hosting cannot start guest journeys or save progress; configure the API and frontend behind the same origin.
 
@@ -36,7 +36,9 @@ ADMIN_PASSWORD='use-a-long-unique-password' \
 NODE_ENV=production npm start
 ```
 
-`ADMIN_EMAIL` and `ADMIN_PASSWORD` are optional; when both are set and the password is at least 12 characters, startup provisions that account with administrator access. Configure TLS as required by your PostgreSQL provider in the connection string/environment. Keep database credentials and admin secrets out of source control.
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` are optional; when both are set and the password is at least 12 characters, startup provisions that account with administrator access. Configure TLS as required by your PostgreSQL provider in the connection string/environment. Keep database credentials and admin secrets out of source control. Copy `.env.example` to `.env` to see every supported variable.
+
+`PORT` falls back to `3001` when it is unset, empty, or not a usable port number, so an empty `PORT` in a shell cannot silently bind an ephemeral port. API responses are sent with `Cache-Control: no-store` plus a strict Content-Security-Policy and related hardening headers.
 
 SQLite is intended for local development and automated tests. PostgreSQL is the required production database.
 

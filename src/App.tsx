@@ -3,16 +3,15 @@ import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { api, ApiError, patchJson, postJson } from './api.js';
 import type { Bootstrap, User } from './types.js';
 import WelcomePage from './pages/WelcomePage.js';
-import HomePage from './pages/HomePage.js';
 import JourneyPage from './pages/JourneyPage.js';
 import LessonPage from './pages/LessonPage.js';
-import PracticePage from './pages/PracticePage.js';
-import TutorPage from './pages/TutorPage.js';
-import ProfilePage from './pages/ProfilePage.js';
 import AdminPage from './pages/AdminPage.js';
+import LegalPage from './pages/LegalPage.js';
+import NotFoundPage from './pages/NotFoundPage.js';
 import Sidebar from './components/Sidebar.js';
+import AccountMenu from './components/AccountMenu.js';
 import { AxiomMark } from './components/Brand.js';
-import { ArrowLeft, Bell, Menu, X } from 'lucide-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 
 function LoadingScreen() {
   return <div className="loading-screen"><AxiomMark /><div className="loading-line" /><span>Setting up your study space…</span></div>;
@@ -22,7 +21,6 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
-  const [bootLoading, setBootLoading] = useState(false);
   const [bootError, setBootError] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
@@ -32,7 +30,6 @@ export default function App() {
   }, []);
 
   const refresh = useCallback(async () => {
-    setBootLoading(true);
     setBootError('');
     try {
       const result = await api<Bootstrap>('/bootstrap');
@@ -43,8 +40,6 @@ export default function App() {
       if (error instanceof ApiError && error.status === 401) setUser(null);
       setBootError(error instanceof Error ? error.message : 'Could not load your learning data.');
       throw error;
-    } finally {
-      setBootLoading(false);
     }
   }, []);
 
@@ -83,21 +78,16 @@ export default function App() {
     }
   };
 
+  // Legal pages are public: they must be readable before anyone starts a journey.
+  if (location.pathname === '/privacy' || location.pathname === '/terms') return <LegalPage />;
   if (sessionLoading) return <LoadingScreen />;
-  if (!user) return <WelcomePage onStart={startJourney} />;
+  if (!user) return <WelcomePage onStart={startJourney} onAuthenticated={handleActiveUser} />;
   if (!bootstrap) {
-    return bootError ? <div className="boot-error"><AxiomMark /><h1>We couldn’t open your study space</h1><p>{bootError}</p><button className="button button-primary" onClick={() => void refresh().catch(() => undefined)}>Try again</button></div> : <LoadingScreen />;
+    return bootError
+      ? <div className="boot-error"><AxiomMark /><h1>We couldn’t open your study space</h1><p>{bootError}</p><button className="button button-primary" onClick={() => void refresh().catch(() => undefined)}>Try again</button></div>
+      : <LoadingScreen />;
   }
 
-  const titleForPath = (path: string) => {
-    if (path.startsWith('/lesson/')) return 'Lesson workspace';
-    if (path.startsWith('/admin')) return 'Content studio';
-    if (path.startsWith('/journey')) return 'Learning journey';
-    if (path.startsWith('/practice')) return 'Practice arena';
-    if (path.startsWith('/tutor')) return 'Axiom tutor';
-    if (path.startsWith('/profile')) return 'Your progress';
-    return 'Your study space';
-  };
   const isLesson = location.pathname.startsWith('/lesson/');
 
   return (
@@ -114,30 +104,35 @@ export default function App() {
           <button className="icon-button mobile-menu-button" onClick={() => setMobileNavOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>
           <div className="topbar-title-wrap">
             {isLesson && <button className="topbar-back" onClick={() => window.history.back()} aria-label="Go back"><ArrowLeft size={16} /></button>}
-            <span className="topbar-section">{titleForPath(location.pathname)}</span>
+            <span className="topbar-section">{isLesson ? 'Lesson' : location.pathname.startsWith('/admin') ? 'Content studio' : 'Your journey'}</span>
           </div>
           <div className="topbar-actions">
-            <div className="streak-chip"><span className="streak-flame">✳</span><strong>{bootstrap.stats.currentStreak}</strong><span>day streak</span></div>
-            <button className="icon-button notification-button" aria-label="Notifications"><Bell size={17} /><span className="notification-dot" /></button>
-            <Link to="/profile" className="topbar-avatar" aria-label="Open profile">{bootstrap.user.fullName.trim().charAt(0).toUpperCase()}</Link>
-            <button className="icon-button mobile-close-button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"><X size={18} /></button>
+            <AccountMenu bootstrap={bootstrap} onUserUpdated={(next) => setUser(next)} onRefresh={refresh} />
+            <button className="icon-button mobile-close-button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">×</button>
           </div>
         </header>
         {bootError && <div className="inline-alert" role="status">{bootError}<button className="text-button" onClick={() => void refresh().catch(() => undefined)}>Retry</button></div>}
         <div className="page-content" key={location.pathname}>
           <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<HomePage bootstrap={bootstrap} refresh={refresh} loading={bootLoading} />} />
+            <Route path="/" element={<Navigate to="/journey" replace />} />
             <Route path="/journey" element={<JourneyPage bootstrap={bootstrap} />} />
             <Route path="/lesson/:lessonId" element={<LessonPage bootstrap={bootstrap} refresh={refresh} />} />
-            <Route path="/practice" element={<PracticePage bootstrap={bootstrap} refresh={refresh} />} />
-            <Route path="/tutor" element={<TutorPage bootstrap={bootstrap} />} />
-            <Route path="/profile" element={<ProfilePage bootstrap={bootstrap} refresh={refresh} onUserUpdated={(next) => setUser(next)} />} />
-            <Route path="/admin" element={bootstrap.user.role === 'admin' ? <AdminPage /> : <Navigate to="/home" replace />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<Navigate to="/journey" replace />} />
+            <Route path="/practice" element={<Navigate to="/journey" replace />} />
+            <Route path="/tutor" element={<Navigate to="/journey" replace />} />
+            <Route path="/profile" element={<Navigate to="/journey" replace />} />
+            <Route path="/admin" element={bootstrap.user.role === 'admin' ? <AdminPage /> : <Navigate to="/journey" replace />} />
+            <Route path="*" element={<NotFoundPage bootstrap={bootstrap} />} />
           </Routes>
         </div>
-        <footer className="shell-footer"><span>© Axiom learning</span><span>Original practice material · Not affiliated with competition organizers</span></footer>
+        <footer className="shell-footer">
+          <span>© {new Date().getFullYear()} Axiom learning</span>
+          <span className="shell-footer-links">
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
+            <span>Original practice material · Not affiliated with competition organizers</span>
+          </span>
+        </footer>
       </div>
     </div>
   );
